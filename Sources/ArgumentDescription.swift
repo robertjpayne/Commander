@@ -18,7 +18,25 @@ public protocol ArgumentDescriptor {
   /// Parse the argument
   func parse(_ parser:ArgumentParser) throws -> ValueType
 }
+extension ArgumentDescriptor {
+  
+  internal func helpDescription(ansi: Bool) -> String {
+    var d = ""
 
+    if ansi {
+      d += "\(ANSI.blue)\(self.name)\(ANSI.reset)"
+    } else {
+      d += "\(self.name)"
+    }
+
+    if let description = self.description {
+      d += " - \(description)"
+    }
+
+    return d
+  }
+  
+}
 
 extension ArgumentConvertible {
   init(string: String) throws {
@@ -130,6 +148,33 @@ open class Option<T : ArgumentConvertible> : ArgumentDescriptor {
 
     throw ArgumentError.missingValue(argument: "--\(self.name)")
   }
+  
+  internal func helpDescription(ansi: Bool) -> String {
+    var str = ""
+    
+    if ansi {
+      str += "--\(ANSI.blue)\(name)\(ANSI.reset)"
+      if let flag = flag {
+        str += ", \(ANSI.blue)-\(flag)\(ANSI.reset)"
+      }
+    } else {
+      str += "--\(name)"
+      if let flag = flag {
+        str += ", -\(flag)"
+      }
+    }
+    
+    if let description = description {
+      str += " - \(description)"
+    }
+    
+    if let `default` = `default` {
+      str += " (Default: \(`default`))"
+    }
+    
+    return str
+  }
+  
 }
 
 
@@ -161,6 +206,27 @@ open class Options<T : ArgumentConvertible> : ArgumentDescriptor {
     
     throw ArgumentError.missingValue(argument: "--\(self.name)")
   }
+  
+  internal func helpDescription(ansi: Bool) -> String {
+    var str = ""
+    
+    if ansi {
+      str += "--\(ANSI.blue)\(name)\(ANSI.reset)"
+    } else {
+      str += "--\(name)"
+    }
+    
+    if let description = description {
+      str += " - \(description)"
+    }
+    
+    if let `default` = `default` {
+      str += " (Default: \(`default`))"
+    }
+    
+    return str
+  }
+  
 }
 
 
@@ -206,6 +272,42 @@ open class Flag : ArgumentDescriptor {
 
     return `default`
   }
+  
+  internal func helpDescription(ansi: Bool) -> String {
+    var str = ""
+    
+    if ansi {
+      str += "--\(ANSI.blue)\(name)\(ANSI.reset)"
+      if let flag = flag {
+        str += ", \(ANSI.blue)-\(flag)\(ANSI.reset)"
+      }
+    } else {
+      str += "--\(name)"
+      if let flag = flag {
+        str += ", -\(flag)"
+      }
+    }
+    
+    if ansi {
+      str += ", --\(ANSI.blue)\(disabledName)\(ANSI.reset)"
+      if let flag = disabledFlag {
+        str += ", \(ANSI.blue)-\(flag)\(ANSI.reset)"
+      }
+    } else {
+      str += ", --\(disabledName)"
+      if let flag = disabledFlag {
+        str += ", -\(flag)"
+      }
+    }
+    
+    if let description = description {
+      str += " - \(description)"
+    }
+    
+    str += " (Default: \(`default`))"
+    
+    return str
+  }
 }
 
 
@@ -214,7 +316,9 @@ class BoxedArgumentDescriptor {
   let description:String?
   let `default`:String?
   let type:ArgumentType
-
+  let plainHelpDescription: String
+  let ansiHelpDescription: String
+  
   init<T : ArgumentDescriptor>(value:T) {
     name = value.name
     description = value.description
@@ -226,6 +330,9 @@ class BoxedArgumentDescriptor {
       // TODO, default for Option and Options
       `default` = nil
     }
+    
+    plainHelpDescription = value.helpDescription(ansi: false)
+    ansiHelpDescription = value.helpDescription(ansi: true)
   }
 }
 
@@ -299,11 +406,7 @@ class Help : Error, ANSIConvertible, CustomStringConvertible {
     if !arguments.isEmpty {
       output.append("Arguments:")
       for argument in arguments {
-        if let description = argument.description {
-          output.append("    <\(argument.name)> - \(description)")
-        } else {
-          output.append("    <\(argument.name)>")
-        }
+        output.append("    " + argument.plainHelpDescription)
       }
       output.append("")
     }
@@ -311,14 +414,7 @@ class Help : Error, ANSIConvertible, CustomStringConvertible {
     if !options.isEmpty {
       output.append("Options:")
       for option in options {
-        var optionOutput = "    --\(option.name)"
-        if let description = option.description {
-          optionOutput += "- \(description)"
-        }
-        if let `default` = option.`default` {
-          optionOutput += " (Default: \(`default`))"
-        }
-        output.append(optionOutput)
+        output.append("    " + option.plainHelpDescription)
       }
     }
 
@@ -357,26 +453,15 @@ class Help : Error, ANSIConvertible, CustomStringConvertible {
     if !arguments.isEmpty {
       output.append("Arguments:")
       for argument in arguments {
-        if let description = argument.description {
-          output.append("    \(ANSI.blue)<\(argument.name)>\(ANSI.reset) - \(description)")
-        } else {
-          output.append("    \(ANSI.blue)<\(argument.name)>\(ANSI.reset)")
-        }
+        output.append("    " + argument.ansiHelpDescription)
       }
       output.append("")
     }
-
+    
     if !options.isEmpty {
       output.append("Options:")
       for option in options {
-        var optionOutput = "    \(ANSI.blue)--\(option.name)\(ANSI.reset)"
-        if let description = option.description {
-          optionOutput += "- \(description)"
-        }
-        if let `default` = option.`default` {
-          optionOutput += " (Default: \(`default`))"
-        }
-        output.append(optionOutput)
+        output.append("    " + option.ansiHelpDescription)
       }
     }
 
