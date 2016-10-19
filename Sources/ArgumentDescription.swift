@@ -283,17 +283,30 @@ class Help : Error, ANSIConvertible, CustomStringConvertible {
       }
       output.append("")
     }
+    
+    if !arguments.isEmpty {
+      output.append("Arguments:")
+      for argument in arguments {
+        if let description = argument.description {
+          output.append("    <\(argument.name)> - \(description)")
+        } else {
+          output.append("    <\(argument.name)>")
+        }
+      }
+      output.append("")
+    }
 
     if !options.isEmpty {
       output.append("Options:")
       for option in options {
-        // TODO: default, [default: `\(`default`)`]
-
+        var optionOutput = "    --\(option.name)"
         if let description = option.description {
-          output.append("    --\(option.name) - \(description)")
-        } else {
-          output.append("    --\(option.name)")
+          optionOutput += "- \(description)"
         }
+        if let `default` = option.`default` {
+          optionOutput += " (Default: \(`default`))"
+        }
+        output.append(optionOutput)
       }
     }
 
@@ -328,17 +341,30 @@ class Help : Error, ANSIConvertible, CustomStringConvertible {
       }
       output.append("")
     }
+    
+    if !arguments.isEmpty {
+      output.append("Arguments:")
+      for argument in arguments {
+        if let description = argument.description {
+          output.append("    \(ANSI.blue)<\(argument.name)>\(ANSI.reset) - \(description)")
+        } else {
+          output.append("    \(ANSI.blue)<\(argument.name)>\(ANSI.reset)")
+        }
+      }
+      output.append("")
+    }
 
     if !options.isEmpty {
       output.append("Options:")
       for option in options {
-        // TODO: default, [default: `\(`default`)`]
-
+        var optionOutput = "    \(ANSI.blue)--\(option.name)\(ANSI.reset)"
         if let description = option.description {
-          output.append("    \(ANSI.blue)--\(option.name)\(ANSI.reset) - \(description)")
-        } else {
-          output.append("    \(ANSI.blue)--\(option.name)\(ANSI.reset)")
+          optionOutput += "- \(description)"
         }
+        if let `default` = option.`default` {
+          optionOutput += " (Default: \(`default`))"
+        }
+        output.append(optionOutput)
       }
     }
 
