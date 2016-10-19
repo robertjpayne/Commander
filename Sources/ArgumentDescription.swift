@@ -89,11 +89,11 @@ open class Option<T : ArgumentConvertible> : ArgumentDescriptor {
   open let name:String
   open let flag:Character?
   open let description:String?
-  open let `default`:ValueType
+  open let `default`:ValueType?
   open var type:ArgumentType { return .option }
   open let validator:Validator?
 
-  public init(_ name:String, _ default:ValueType, flag:Character? = nil, description:String? = nil, validator: Validator? = nil) {
+  public init(_ name:String, _ default:ValueType?, flag:Character? = nil, description:String? = nil, validator: Validator? = nil) {
     self.name = name
     self.flag = flag
     self.description = description
@@ -123,8 +123,12 @@ open class Option<T : ArgumentConvertible> : ArgumentDescriptor {
         return value
       }
     }
+    
+    if let `default` = `default` {
+      return `default`
+    }
 
-    return `default`
+    throw ArgumentError.missingValue(argument: nil)
   }
 }
 
@@ -135,10 +139,10 @@ open class Options<T : ArgumentConvertible> : ArgumentDescriptor {
   open let name:String
   open let description:String?
   open let count:Int
-  open let `default`:ValueType
+  open let `default`:ValueType?
   open var type:ArgumentType { return .option }
 
-  public init(_ name:String, _ default:ValueType, count: Int, description:String? = nil) {
+  public init(_ name:String, _ default:ValueType?, count: Int, description:String? = nil) {
     self.name = name
     self.`default` = `default`
     self.count = count
@@ -147,7 +151,15 @@ open class Options<T : ArgumentConvertible> : ArgumentDescriptor {
 
   open func parse(_ parser:ArgumentParser) throws -> ValueType {
     let values = try parser.shiftValuesForOption(name, count: count)
-    return try values?.map { try T(string: $0) } ?? `default`
+    if let value = try values?.map { try T(string: $0) } {
+      return value
+    }
+    
+    if let `default` = `default` {
+      return `default`
+    }
+    
+    throw ArgumentError.missingValue(argument: nil)
   }
 }
 
@@ -163,7 +175,7 @@ open class Flag : ArgumentDescriptor {
   open let `default`:ValueType
   open var type:ArgumentType { return .option }
 
-  public init(_ name:String, flag:Character? = nil, disabledName:String? = nil, disabledFlag:Character? = nil, description:String? = nil, default:Bool = false) {
+  public init(_ name:String, _ default:Bool = false, flag:Character? = nil, disabledName:String? = nil, disabledFlag:Character? = nil, description:String? = nil) {
     self.name = name
     self.disabledName = disabledName ?? "no-\(name)"
     self.flag = flag
