@@ -128,7 +128,7 @@ open class Option<T : ArgumentConvertible> : ArgumentDescriptor {
       return `default`
     }
 
-    throw ArgumentError.missingValue(argument: nil)
+    throw ArgumentError.missingValue(argument: "--\(self.name)")
   }
 }
 
@@ -159,7 +159,7 @@ open class Options<T : ArgumentConvertible> : ArgumentDescriptor {
       return `default`
     }
     
-    throw ArgumentError.missingValue(argument: nil)
+    throw ArgumentError.missingValue(argument: "--\(self.name)")
   }
 }
 
